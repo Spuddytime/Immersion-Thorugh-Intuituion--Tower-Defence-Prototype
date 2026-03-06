@@ -81,4 +81,13 @@ public class PathTester : MonoBehaviour
             }
         }
     }
+
+    public List<GridNode> GetCurrentPath()
+
+    {
+
+    return currentPath;
+    
+    }
+
 }
