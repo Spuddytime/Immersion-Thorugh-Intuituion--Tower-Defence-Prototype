@@ -1,12 +1,14 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 // Simple tester to visualise the path between start and goal
 public class PathTester : MonoBehaviour
 {
+    public static Action OnPathUpdated;
+
     public Transform startMarker;
     public Transform goalMarker;
-
     public LineRenderer pathLine;
 
     private List<GridNode> currentPath;
@@ -23,6 +25,9 @@ public class PathTester : MonoBehaviour
     public void TestPath()
     {
         if (GridManager.Instance == null || Pathfinder.Instance == null)
+            return;
+
+        if (startMarker == null || goalMarker == null)
             return;
 
         if (!GridManager.Instance.GetXY(startMarker.position, out int startX, out int startY))
@@ -42,6 +47,7 @@ public class PathTester : MonoBehaviour
                 pathLine.positionCount = 0;
             }
 
+            OnPathUpdated?.Invoke();
             return;
         }
 
@@ -58,6 +64,13 @@ public class PathTester : MonoBehaviour
                 pathLine.SetPosition(i, pos);
             }
         }
+
+        OnPathUpdated?.Invoke();
+    }
+
+    public List<GridNode> GetCurrentPath()
+    {
+        return currentPath;
     }
 
     // Debug path visualization in Scene view
@@ -71,7 +84,6 @@ public class PathTester : MonoBehaviour
         for (int i = 0; i < currentPath.Count; i++)
         {
             Vector3 pos = currentPath[i].worldPosition + Vector3.up * 0.2f;
-
             Gizmos.DrawSphere(pos, 0.15f);
 
             if (i < currentPath.Count - 1)
@@ -81,13 +93,4 @@ public class PathTester : MonoBehaviour
             }
         }
     }
-
-    public List<GridNode> GetCurrentPath()
-
-    {
-
-    return currentPath;
-    
-    }
-
 }

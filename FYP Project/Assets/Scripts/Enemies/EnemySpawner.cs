@@ -9,7 +9,6 @@ public class EnemySpawner : MonoBehaviour
 
     void Update()
     {
-        // Press E to spawn an enemy for testing
         if (Input.GetKeyDown(KeyCode.E))
         {
             SpawnEnemy();
@@ -34,6 +33,7 @@ public class EnemySpawner : MonoBehaviour
 
         if (mover != null)
         {
+            mover.goalMarker = pathTester.goalMarker;
             mover.SetPath(path);
         }
     }
