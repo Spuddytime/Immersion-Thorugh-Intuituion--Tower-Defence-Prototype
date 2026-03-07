@@ -7,9 +7,11 @@ public class EnemyMover : MonoBehaviour
     public float moveSpeed = 2f;
     public float turnSpeed = 8f;
     public Transform goalMarker;
+    public int damageToBase = 1;
 
     private List<GridNode> path;
     private int currentPathIndex = 0;
+    private BaseHealth baseHealth;
 
     private void OnEnable()
     {
@@ -19,6 +21,11 @@ public class EnemyMover : MonoBehaviour
     private void OnDisable()
     {
         PathTester.OnPathUpdated -= RecalculatePath;
+    }
+
+    private void Start()
+    {
+        baseHealth = FindFirstObjectByType<BaseHealth>();
     }
 
     public void SetPath(List<GridNode> newPath)
@@ -44,7 +51,6 @@ public class EnemyMover : MonoBehaviour
         Vector3 moveDirection = targetPosition - transform.position;
         moveDirection.y = 0f;
 
-        // Smoothly rotate toward movement direction
         if (moveDirection.sqrMagnitude > 0.001f)
         {
             Quaternion targetRotation = Quaternion.LookRotation(moveDirection.normalized);
@@ -55,24 +61,33 @@ public class EnemyMover : MonoBehaviour
             );
         }
 
-        // Move toward current path node
         transform.position = Vector3.MoveTowards(
             transform.position,
             targetPosition,
             moveSpeed * Time.deltaTime
         );
 
-        // When close enough, move to next node
         if (Vector3.Distance(transform.position, targetPosition) < 0.05f)
         {
             currentPathIndex++;
 
             if (currentPathIndex >= path.Count)
             {
-                Debug.Log("Enemy reached the goal.");
-                Destroy(gameObject);
+                ReachGoal();
             }
         }
+    }
+
+    void ReachGoal()
+    {
+        Debug.Log("Enemy reached the goal.");
+
+        if (baseHealth != null)
+        {
+            baseHealth.TakeDamage(damageToBase);
+        }
+
+        Destroy(gameObject);
     }
 
     void RecalculatePath()
