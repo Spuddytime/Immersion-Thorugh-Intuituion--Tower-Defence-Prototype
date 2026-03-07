@@ -110,23 +110,57 @@ public class GridManager : MonoBehaviour
         node.isBlocked = blocked;
     }
 
-    // Places an object (like a wall) in a grid cell
-    public bool PlaceObject(int x, int y, GameObject prefab)
+    public bool HasWall(int x, int y)
+    {
+        GridNode node = GetNode(x, y);
+        return node != null && node.wallObject != null;
+    }
+
+    public bool HasTurret(int x, int y)
+    {
+        GridNode node = GetNode(x, y);
+        return node != null && node.turretObject != null;
+    }
+
+    // Places a wall in a cell
+    public bool PlaceWall(int x, int y, GameObject wallPrefab)
     {
         GridNode node = GetNode(x, y);
 
-        if (node == null || node.isBlocked)
+        if (node == null || node.wallObject != null)
             return false;
 
-        GameObject obj = Instantiate(prefab, node.worldPosition, Quaternion.identity);
+        GameObject wall = Instantiate(wallPrefab, node.worldPosition, Quaternion.identity);
 
+        node.wallObject = wall;
         node.isBlocked = true;
-        node.placedObject = obj;
 
         return true;
     }
 
-    // Removes any object from the specified cell
+    // Places a turret on top of an existing wall
+    public bool PlaceTurret(int x, int y, GameObject turretPrefab)
+    {
+        GridNode node = GetNode(x, y);
+
+        if (node == null)
+            return false;
+
+        if (node.wallObject == null)
+            return false;
+
+        if (node.turretObject != null)
+            return false;
+
+        Vector3 turretPosition = node.worldPosition + new Vector3(0f, 1f, 0f);
+        GameObject turret = Instantiate(turretPrefab, turretPosition, Quaternion.identity);
+
+        node.turretObject = turret;
+
+        return true;
+    }
+
+    // Removes both turret and wall from a cell
     public void ClearCell(int x, int y)
     {
         GridNode node = GetNode(x, y);
@@ -134,13 +168,19 @@ public class GridManager : MonoBehaviour
         if (node == null)
             return;
 
-        if (node.placedObject != null)
+        if (node.turretObject != null)
         {
-            Destroy(node.placedObject);
+            Destroy(node.turretObject);
+            node.turretObject = null;
+        }
+
+        if (node.wallObject != null)
+        {
+            Destroy(node.wallObject);
+            node.wallObject = null;
         }
 
         node.isBlocked = false;
-        node.placedObject = null;
     }
 
     // Draws the grid in the Scene view for debugging

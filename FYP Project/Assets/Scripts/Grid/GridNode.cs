@@ -7,14 +7,17 @@ public class GridNode
     public int x;
     public int y;
 
-    // Whether this cell is blocked by a placed object
+    // Whether this cell is blocked for pathfinding
     public bool isBlocked;
 
     // World position of the centre of the cell
     public Vector3 worldPosition;
 
-    // Reference to any placed object in this cell
-    public GameObject placedObject;
+    // Reference to wall placed in this cell
+    public GameObject wallObject;
+
+    // Reference to turret placed on this wall
+    public GameObject turretObject;
 
     // Used by pathfinding to reconstruct the path
     public GridNode cameFromNode;
@@ -26,7 +29,8 @@ public class GridNode
         this.worldPosition = worldPosition;
 
         isBlocked = false;
-        placedObject = null;
+        wallObject = null;
+        turretObject = null;
         cameFromNode = null;
     }
 }

@@ -1,10 +1,11 @@
 using UnityEngine;
 
-// Handles player input for placing and removing buildable objects using the mouse
+// Handles player input for placing walls and mounted turrets using the mouse
 public class MouseBuilder : MonoBehaviour
 {
     public Camera mainCamera;
     public GameObject wallPrefab;
+    public GameObject turretPrefab;
     public Transform cellHighlight;
     public LayerMask groundLayer;
 
@@ -13,20 +14,42 @@ public class MouseBuilder : MonoBehaviour
 
     public PathTester pathTester;
 
+    private BuildMode currentBuildMode = BuildMode.Wall;
+
+    private enum BuildMode
+    {
+        Wall,
+        Turret
+    }
+
     void Update()
     {
+        HandleBuildModeInput();
         UpdateHighlight();
 
-        // Left click places a wall
         if (Input.GetMouseButtonDown(0))
         {
             TryPlace();
         }
 
-        // Right click removes a wall
         if (Input.GetMouseButtonDown(1))
         {
             TryRemove();
+        }
+    }
+
+    void HandleBuildModeInput()
+    {
+        if (Input.GetKeyDown(KeyCode.Alpha1))
+        {
+            currentBuildMode = BuildMode.Wall;
+            Debug.Log("Build Mode: Wall");
+        }
+
+        if (Input.GetKeyDown(KeyCode.Alpha2))
+        {
+            currentBuildMode = BuildMode.Turret;
+            Debug.Log("Build Mode: Turret");
         }
     }
 
@@ -52,10 +75,9 @@ public class MouseBuilder : MonoBehaviour
         cellHighlight.gameObject.SetActive(false);
     }
 
-    // Attempts to place a wall where the mouse is pointing
     void TryPlace()
     {
-        if (mainCamera == null || wallPrefab == null || GridManager.Instance == null)
+        if (mainCamera == null || GridManager.Instance == null)
             return;
 
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
@@ -64,37 +86,70 @@ public class MouseBuilder : MonoBehaviour
         {
             if (GridManager.Instance.GetXY(hit.point, out int x, out int y))
             {
-                // Prevent building on start or goal cells
-                if (IsSpecialCell(x, y))
+                switch (currentBuildMode)
                 {
-                    Debug.Log("Cannot build on start or goal cell.");
-                    return;
-                }
+                    case BuildMode.Wall:
+                        TryPlaceWall(x, y);
+                        break;
 
-                // Prevent placing on already blocked cells
-                if (GridManager.Instance.IsCellBlocked(x, y))
-                {
-                    return;
-                }
-
-                // Prevent creating a map with no valid path
-                if (WouldBlockPath(x, y))
-                {
-                    Debug.Log("Cannot place wall here - it would block all paths.");
-                    return;
-                }
-
-                bool placed = GridManager.Instance.PlaceObject(x, y, wallPrefab);
-
-                if (placed && pathTester != null)
-                {
-                    pathTester.TestPath();
+                    case BuildMode.Turret:
+                        TryPlaceTurret(x, y);
+                        break;
                 }
             }
         }
     }
 
-    // Checks whether the selected cell is the start or goal cell
+    void TryPlaceWall(int x, int y)
+    {
+        if (wallPrefab == null)
+            return;
+
+        if (IsSpecialCell(x, y))
+        {
+            Debug.Log("Cannot build on start or goal cell.");
+            return;
+        }
+
+        if (GridManager.Instance.HasWall(x, y))
+        {
+            return;
+        }
+
+        if (WouldBlockPath(x, y))
+        {
+            Debug.Log("Cannot place wall here - it would block all paths.");
+            return;
+        }
+
+        bool placed = GridManager.Instance.PlaceWall(x, y, wallPrefab);
+
+        if (placed && pathTester != null)
+        {
+            pathTester.TestPath();
+        }
+    }
+
+    void TryPlaceTurret(int x, int y)
+    {
+        if (turretPrefab == null)
+            return;
+
+        if (!GridManager.Instance.HasWall(x, y))
+        {
+            Debug.Log("Turrets must be placed on an existing wall.");
+            return;
+        }
+
+        if (GridManager.Instance.HasTurret(x, y))
+        {
+            Debug.Log("This wall already has a turret.");
+            return;
+        }
+
+        GridManager.Instance.PlaceTurret(x, y, turretPrefab);
+    }
+
     bool IsSpecialCell(int x, int y)
     {
         if (startMarker != null && GridManager.Instance.GetXY(startMarker.position, out int startX, out int startY))
@@ -112,7 +167,6 @@ public class MouseBuilder : MonoBehaviour
         return false;
     }
 
-    // Checks whether placing a wall in this cell would block all valid paths
     bool WouldBlockPath(int x, int y)
     {
         if (GridManager.Instance == null || Pathfinder.Instance == null)
@@ -124,19 +178,15 @@ public class MouseBuilder : MonoBehaviour
         if (goalMarker == null || !GridManager.Instance.GetXY(goalMarker.position, out int goalX, out int goalY))
             return true;
 
-        // Temporarily block the target cell
         GridManager.Instance.SetCellBlocked(x, y, true);
 
-        // Test whether a valid path still exists
         var testPath = Pathfinder.Instance.FindPath(startX, startY, goalX, goalY);
 
-        // Restore the cell
         GridManager.Instance.SetCellBlocked(x, y, false);
 
         return testPath == null;
     }
 
-    // Attempts to remove a wall from the clicked cell
     void TryRemove()
     {
         if (mainCamera == null || GridManager.Instance == null)
