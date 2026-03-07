@@ -14,8 +14,7 @@ public class WaveSpawner : MonoBehaviour
 
     void Update()
     {
-        // Press W to start the next wave
-        if (Input.GetKeyDown(KeyCode.W) && !isSpawning)
+        if (Input.GetKeyDown(KeyCode.E) && !isSpawning)
         {
             StartCoroutine(SpawnWave());
         }
@@ -28,6 +27,11 @@ public class WaveSpawner : MonoBehaviour
 
         currentWave++;
         isSpawning = true;
+
+        if (UIManager.Instance != null)
+        {
+            UIManager.Instance.UpdateWave(currentWave);
+        }
 
         Debug.Log("Wave " + currentWave + " started.");
 
