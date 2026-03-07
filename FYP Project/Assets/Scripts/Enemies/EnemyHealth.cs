@@ -4,6 +4,7 @@ using UnityEngine;
 public class EnemyHealth : MonoBehaviour
 {
     public int maxHealth = 3;
+    public EnemyUnitType unitType = EnemyUnitType.Ground;
 
     private int currentHealth;
 
