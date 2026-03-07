@@ -1,30 +1,21 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 // Handles creation and management of the grid used for building and pathfinding
 public class GridManager : MonoBehaviour
 {
-    // Size of the grid (number of cells)
     public int gridWidth = 20;
     public int gridHeight = 20;
-
-    // Physical size of each grid cell in world units
     public float cellSize = 1f;
-
-    // World position where the grid starts
     public Vector3 originPosition = Vector3.zero;
 
-    // 2D array storing all grid nodes
     private GridNode[,] grid;
 
-    // Singleton reference so other scripts can easily access the grid
     public static GridManager Instance;
 
     private void Awake()
     {
-        // Assign this instance
         Instance = this;
-
-        // Generate the grid when the scene starts
         CreateGrid();
     }
 
@@ -38,8 +29,6 @@ public class GridManager : MonoBehaviour
             for (int y = 0; y < gridHeight; y++)
             {
                 Vector3 worldPos = GetWorldPosition(x, y);
-
-                // Create a node for this cell
                 grid[x, y] = new GridNode(x, y, worldPos);
             }
         }
@@ -48,12 +37,11 @@ public class GridManager : MonoBehaviour
     // Converts grid coordinates into a world position
     public Vector3 GetWorldPosition(int x, int y)
     {
-        return originPosition +
-               new Vector3(
-                   x * cellSize + cellSize * 0.5f,
-                   0f,
-                   y * cellSize + cellSize * 0.5f
-               );
+        return originPosition + new Vector3(
+            x * cellSize + cellSize * 0.5f,
+            0f,
+            y * cellSize + cellSize * 0.5f
+        );
     }
 
     // Converts a world position into grid coordinates
@@ -64,23 +52,74 @@ public class GridManager : MonoBehaviour
         x = Mathf.FloorToInt(local.x / cellSize);
         y = Mathf.FloorToInt(local.z / cellSize);
 
-        // Returns true if the position is inside the grid
         return x >= 0 && y >= 0 && x < gridWidth && y < gridHeight;
     }
 
-    // Places an object (like a wall or tower) in a grid cell
+    // Returns the node at the given grid coordinates
+    public GridNode GetNode(int x, int y)
+    {
+        if (x < 0 || y < 0 || x >= gridWidth || y >= gridHeight)
+            return null;
+
+        return grid[x, y];
+    }
+
+    // Returns neighbouring cells (no diagonals)
+    public List<GridNode> GetNeighbours(GridNode node)
+    {
+        List<GridNode> neighbours = new List<GridNode>();
+
+        // Up
+        if (node.y + 1 < gridHeight)
+            neighbours.Add(grid[node.x, node.y + 1]);
+
+        // Right
+        if (node.x + 1 < gridWidth)
+            neighbours.Add(grid[node.x + 1, node.y]);
+
+        // Down
+        if (node.y - 1 >= 0)
+            neighbours.Add(grid[node.x, node.y - 1]);
+
+        // Left
+        if (node.x - 1 >= 0)
+            neighbours.Add(grid[node.x - 1, node.y]);
+
+        return neighbours;
+    }
+
+    // Returns true if the given cell is blocked
+    public bool IsCellBlocked(int x, int y)
+    {
+        GridNode node = GetNode(x, y);
+
+        if (node == null)
+            return true;
+
+        return node.isBlocked;
+    }
+
+    // Temporarily sets whether a cell is blocked
+    public void SetCellBlocked(int x, int y, bool blocked)
+    {
+        GridNode node = GetNode(x, y);
+
+        if (node == null)
+            return;
+
+        node.isBlocked = blocked;
+    }
+
+    // Places an object (like a wall) in a grid cell
     public bool PlaceObject(int x, int y, GameObject prefab)
     {
-        GridNode node = grid[x, y];
+        GridNode node = GetNode(x, y);
 
-        // Prevent placing objects in blocked cells
-        if (node.isBlocked)
+        if (node == null || node.isBlocked)
             return false;
 
-        // Instantiate object at cell position
         GameObject obj = Instantiate(prefab, node.worldPosition, Quaternion.identity);
 
-        // Mark the cell as occupied
         node.isBlocked = true;
         node.placedObject = obj;
 
@@ -90,45 +129,19 @@ public class GridManager : MonoBehaviour
     // Removes any object from the specified cell
     public void ClearCell(int x, int y)
     {
-        GridNode node = grid[x, y];
+        GridNode node = GetNode(x, y);
+
+        if (node == null)
+            return;
 
         if (node.placedObject != null)
+        {
             Destroy(node.placedObject);
+        }
 
         node.isBlocked = false;
         node.placedObject = null;
     }
-
-    public System.Collections.Generic.List<GridNode> GetNeighbours(GridNode node)
-{
-    System.Collections.Generic.List<GridNode> neighbours = new System.Collections.Generic.List<GridNode>();
-
-    // Left
-    if (node.x - 1 >= 0)
-        neighbours.Add(grid[node.x - 1, node.y]);
-
-    // Right
-    if (node.x + 1 < gridWidth)
-        neighbours.Add(grid[node.x + 1, node.y]);
-
-    // Down
-    if (node.y - 1 >= 0)
-        neighbours.Add(grid[node.x, node.y - 1]);
-
-    // Up
-    if (node.y + 1 < gridHeight)
-        neighbours.Add(grid[node.x, node.y + 1]);
-
-    return neighbours;
-}
-
-public GridNode GetNode(int x, int y)
-{
-    if (x < 0 || y < 0 || x >= gridWidth || y >= gridHeight)
-        return null;
-
-    return grid[x, y];
-}
 
     // Draws the grid in the Scene view for debugging
     private void OnDrawGizmos()
@@ -139,13 +152,11 @@ public GridNode GetNode(int x, int y)
         {
             for (int y = 0; y < gridHeight; y++)
             {
-                Vector3 worldPos =
-                    originPosition +
-                    new Vector3(
-                        x * cellSize + cellSize * 0.5f,
-                        0f,
-                        y * cellSize + cellSize * 0.5f
-                    );
+                Vector3 worldPos = originPosition + new Vector3(
+                    x * cellSize + cellSize * 0.5f,
+                    0f,
+                    y * cellSize + cellSize * 0.5f
+                );
 
                 Gizmos.DrawWireCube(worldPos, new Vector3(cellSize, 0.05f, cellSize));
             }

@@ -71,9 +71,21 @@ public class MouseBuilder : MonoBehaviour
                     return;
                 }
 
+                // Prevent placing on already blocked cells
+                if (GridManager.Instance.IsCellBlocked(x, y))
+                {
+                    return;
+                }
+
+                // Prevent creating a map with no valid path
+                if (WouldBlockPath(x, y))
+                {
+                    Debug.Log("Cannot place wall here - it would block all paths.");
+                    return;
+                }
+
                 bool placed = GridManager.Instance.PlaceObject(x, y, wallPrefab);
 
-                // If placement succeeded, update the path automatically
                 if (placed && pathTester != null)
                 {
                     pathTester.TestPath();
@@ -100,6 +112,30 @@ public class MouseBuilder : MonoBehaviour
         return false;
     }
 
+    // Checks whether placing a wall in this cell would block all valid paths
+    bool WouldBlockPath(int x, int y)
+    {
+        if (GridManager.Instance == null || Pathfinder.Instance == null)
+            return true;
+
+        if (startMarker == null || !GridManager.Instance.GetXY(startMarker.position, out int startX, out int startY))
+            return true;
+
+        if (goalMarker == null || !GridManager.Instance.GetXY(goalMarker.position, out int goalX, out int goalY))
+            return true;
+
+        // Temporarily block the target cell
+        GridManager.Instance.SetCellBlocked(x, y, true);
+
+        // Test whether a valid path still exists
+        var testPath = Pathfinder.Instance.FindPath(startX, startY, goalX, goalY);
+
+        // Restore the cell
+        GridManager.Instance.SetCellBlocked(x, y, false);
+
+        return testPath == null;
+    }
+
     // Attempts to remove a wall from the clicked cell
     void TryRemove()
     {
@@ -114,7 +150,6 @@ public class MouseBuilder : MonoBehaviour
             {
                 GridManager.Instance.ClearCell(x, y);
 
-                // Update the path after removing a wall
                 if (pathTester != null)
                 {
                     pathTester.TestPath();
