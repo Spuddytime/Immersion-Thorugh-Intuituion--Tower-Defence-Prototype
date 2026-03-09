@@ -14,9 +14,16 @@ public class EnemyMover : MonoBehaviour
     public Transform visualRoot;
     public Vector3 visualRotationOffset = Vector3.zero;
 
+    [Header("Hover")]
+    public bool useHover = false;
+    public float hoverHeight = 0.2f;
+    public float hoverSpeed = 3f;
+
     private List<GridNode> path;
     private int currentPathIndex = 0;
     private BaseHealth baseHealth;
+
+    private Vector3 visualBaseLocalPosition;
 
     private void OnEnable()
     {
@@ -32,9 +39,9 @@ public class EnemyMover : MonoBehaviour
     {
         baseHealth = FindFirstObjectByType<BaseHealth>();
 
-        // Apply the visual offset once at start
         if (visualRoot != null)
         {
+            visualBaseLocalPosition = visualRoot.localPosition;
             visualRoot.localRotation = Quaternion.Euler(visualRotationOffset);
         }
     }
@@ -62,7 +69,7 @@ public class EnemyMover : MonoBehaviour
         Vector3 moveDirection = targetPosition - transform.position;
         moveDirection.y = 0f;
 
-        // Rotate the root for movement
+        // Rotate root toward movement direction
         if (moveDirection.sqrMagnitude > 0.001f)
         {
             Quaternion targetRotation = Quaternion.LookRotation(moveDirection.normalized);
@@ -73,10 +80,21 @@ public class EnemyMover : MonoBehaviour
             );
         }
 
-        // Keep the visual child in the correct local orientation
+        // Keep visual model in the correct local orientation
         if (visualRoot != null)
         {
             visualRoot.localRotation = Quaternion.Euler(visualRotationOffset);
+
+            if (useHover)
+            {
+                Vector3 hoverPosition = visualBaseLocalPosition;
+                hoverPosition.y += Mathf.Sin(Time.time * hoverSpeed) * hoverHeight;
+                visualRoot.localPosition = hoverPosition;
+            }
+            else
+            {
+                visualRoot.localPosition = visualBaseLocalPosition;
+            }
         }
 
         transform.position = Vector3.MoveTowards(
