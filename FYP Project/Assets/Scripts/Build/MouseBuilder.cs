@@ -1,11 +1,12 @@
 using UnityEngine;
 
-// Handles player input for placing walls and mounted turrets using the mouse
+// Handles player input for placing walls, mounted turrets, and traps using the mouse
 public class MouseBuilder : MonoBehaviour
 {
     public Camera mainCamera;
     public GameObject wallPrefab;
     public GameObject turretPrefab;
+    public GameObject trapPrefab;
     public Transform cellHighlight;
     public LayerMask groundLayer;
 
@@ -19,7 +20,13 @@ public class MouseBuilder : MonoBehaviour
     private enum BuildMode
     {
         Wall,
-        Turret
+        Turret,
+        Trap
+    }
+
+    void Start()
+    {
+        UpdateBuildModeUI();
     }
 
     void Update()
@@ -44,16 +51,45 @@ public class MouseBuilder : MonoBehaviour
         {
             currentBuildMode = BuildMode.Wall;
             Debug.Log("Build Mode: Wall");
+            UpdateBuildModeUI();
         }
 
         if (Input.GetKeyDown(KeyCode.Alpha2))
         {
             currentBuildMode = BuildMode.Turret;
             Debug.Log("Build Mode: Turret");
+            UpdateBuildModeUI();
+        }
+
+        if (Input.GetKeyDown(KeyCode.Alpha3))
+        {
+            currentBuildMode = BuildMode.Trap;
+            Debug.Log("Build Mode: Trap");
+            UpdateBuildModeUI();
         }
     }
 
-    // Moves the highlight object to the grid cell under the mouse
+    void UpdateBuildModeUI()
+    {
+        if (UIManager.Instance == null)
+            return;
+
+        switch (currentBuildMode)
+        {
+            case BuildMode.Wall:
+                UIManager.Instance.UpdateBuildMode("Wall");
+                break;
+
+            case BuildMode.Turret:
+                UIManager.Instance.UpdateBuildMode("Turret");
+                break;
+
+            case BuildMode.Trap:
+                UIManager.Instance.UpdateBuildMode("Trap");
+                break;
+        }
+    }
+
     void UpdateHighlight()
     {
         if (mainCamera == null || cellHighlight == null || GridManager.Instance == null)
@@ -94,6 +130,10 @@ public class MouseBuilder : MonoBehaviour
 
                     case BuildMode.Turret:
                         TryPlaceTurret(x, y);
+                        break;
+
+                    case BuildMode.Trap:
+                        TryPlaceTrap(x, y);
                         break;
                 }
             }
@@ -149,6 +189,33 @@ public class MouseBuilder : MonoBehaviour
 
         GridManager.Instance.PlaceTurret(x, y, turretPrefab);
     }
+
+    void TryPlaceTrap(int x, int y)
+{
+    if (trapPrefab == null)
+        return;
+
+    // Traps go on walkable ground, not on walls
+    if (GridManager.Instance.HasWall(x, y))
+         {   
+        Debug.Log("Traps must be placed on open ground, not on walls.");
+        return;
+        }
+
+    if (GridManager.Instance.HasTrap(x, y))
+        {
+        Debug.Log("This tile already has a trap.");
+        return;
+        }
+
+    if (IsSpecialCell(x, y))
+        {
+        Debug.Log("Cannot place trap on start or goal cell.");
+        return;
+        }
+
+    GridManager.Instance.PlaceTrap(x, y, trapPrefab);
+}
 
     bool IsSpecialCell(int x, int y)
     {

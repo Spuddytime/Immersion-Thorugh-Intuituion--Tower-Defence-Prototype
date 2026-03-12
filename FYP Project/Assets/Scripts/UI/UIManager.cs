@@ -8,6 +8,8 @@ public class UIManager : MonoBehaviour
 
     public TextMeshProUGUI baseHealthText;
     public TextMeshProUGUI waveText;
+    public TextMeshProUGUI buildModeText;
+    public TextMeshProUGUI buildHintText;
     public GameObject gameOverText;
 
     private void Awake()
@@ -17,6 +19,11 @@ public class UIManager : MonoBehaviour
         if (gameOverText != null)
         {
             gameOverText.SetActive(false);
+        }
+
+        if (buildHintText != null)
+        {
+            buildHintText.text = "1 = Wall    2 = Turret    3 = Trap";
         }
     }
 
@@ -33,6 +40,14 @@ public class UIManager : MonoBehaviour
         if (waveText != null)
         {
             waveText.text = "Wave: " + currentWave;
+        }
+    }
+
+    public void UpdateBuildMode(string modeName)
+    {
+        if (buildModeText != null)
+        {
+            buildModeText.text = "Build Mode: " + modeName;
         }
     }
 

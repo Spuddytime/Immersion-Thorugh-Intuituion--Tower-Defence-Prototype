@@ -9,6 +9,9 @@ public class GridManager : MonoBehaviour
     public float cellSize = 1f;
     public Vector3 originPosition = Vector3.zero;
 
+    public float turretHeightOffset = 1f;
+    public float trapHeightOffset = 0.15f;
+
     private GridNode[,] grid;
 
     public static GridManager Instance;
@@ -19,7 +22,6 @@ public class GridManager : MonoBehaviour
         CreateGrid();
     }
 
-    // Creates the full grid of nodes
     void CreateGrid()
     {
         grid = new GridNode[gridWidth, gridHeight];
@@ -34,7 +36,6 @@ public class GridManager : MonoBehaviour
         }
     }
 
-    // Converts grid coordinates into a world position
     public Vector3 GetWorldPosition(int x, int y)
     {
         return originPosition + new Vector3(
@@ -44,7 +45,6 @@ public class GridManager : MonoBehaviour
         );
     }
 
-    // Converts a world position into grid coordinates
     public bool GetXY(Vector3 worldPosition, out int x, out int y)
     {
         Vector3 local = worldPosition - originPosition;
@@ -55,7 +55,6 @@ public class GridManager : MonoBehaviour
         return x >= 0 && y >= 0 && x < gridWidth && y < gridHeight;
     }
 
-    // Returns the node at the given grid coordinates
     public GridNode GetNode(int x, int y)
     {
         if (x < 0 || y < 0 || x >= gridWidth || y >= gridHeight)
@@ -64,31 +63,25 @@ public class GridManager : MonoBehaviour
         return grid[x, y];
     }
 
-    // Returns neighbouring cells (no diagonals)
     public List<GridNode> GetNeighbours(GridNode node)
     {
         List<GridNode> neighbours = new List<GridNode>();
 
-        // Up
         if (node.y + 1 < gridHeight)
             neighbours.Add(grid[node.x, node.y + 1]);
 
-        // Right
         if (node.x + 1 < gridWidth)
             neighbours.Add(grid[node.x + 1, node.y]);
 
-        // Down
         if (node.y - 1 >= 0)
             neighbours.Add(grid[node.x, node.y - 1]);
 
-        // Left
         if (node.x - 1 >= 0)
             neighbours.Add(grid[node.x - 1, node.y]);
 
         return neighbours;
     }
 
-    // Returns true if the given cell is blocked
     public bool IsCellBlocked(int x, int y)
     {
         GridNode node = GetNode(x, y);
@@ -99,7 +92,6 @@ public class GridManager : MonoBehaviour
         return node.isBlocked;
     }
 
-    // Temporarily sets whether a cell is blocked
     public void SetCellBlocked(int x, int y, bool blocked)
     {
         GridNode node = GetNode(x, y);
@@ -122,7 +114,14 @@ public class GridManager : MonoBehaviour
         return node != null && node.turretObject != null;
     }
 
-    // Places a wall in a cell
+    public bool HasTrap(int x, int y)
+    {
+        GridNode node = GetNode(x, y);
+        return node != null && node.trapObject != null;
+    }
+
+
+    // Logic for placing good ol walls maze style
     public bool PlaceWall(int x, int y, GameObject wallPrefab)
     {
         GridNode node = GetNode(x, y);
@@ -138,7 +137,7 @@ public class GridManager : MonoBehaviour
         return true;
     }
 
-    // Places a turret on top of an existing wall
+    // Basic placeholder turret for now will work on new turrets and designs later
     public bool PlaceTurret(int x, int y, GameObject turretPrefab)
     {
         GridNode node = GetNode(x, y);
@@ -152,7 +151,7 @@ public class GridManager : MonoBehaviour
         if (node.turretObject != null)
             return false;
 
-        Vector3 turretPosition = node.worldPosition + new Vector3(0f, 1f, 0f);
+        Vector3 turretPosition = node.worldPosition + new Vector3(0f, turretHeightOffset, 0f);
         GameObject turret = Instantiate(turretPrefab, turretPosition, Quaternion.identity);
 
         node.turretObject = turret;
@@ -160,13 +159,40 @@ public class GridManager : MonoBehaviour
         return true;
     }
 
-    // Removes both turret and wall from a cell
+    public bool PlaceTrap(int x, int y, GameObject trapPrefab)
+{
+    GridNode node = GetNode(x, y);
+
+    if (node == null)
+        return false;
+
+    // Trap must be on walkable ground, not on a wall
+    if (node.wallObject != null)
+        return false;
+
+    if (node.trapObject != null)
+        return false;
+
+    Vector3 trapPosition = node.worldPosition + new Vector3(0f, trapHeightOffset, 0f);
+    GameObject trap = Instantiate(trapPrefab, trapPosition, Quaternion.identity);
+
+    node.trapObject = trap;
+
+    return true;
+}
+
     public void ClearCell(int x, int y)
     {
         GridNode node = GetNode(x, y);
 
         if (node == null)
             return;
+
+        if (node.trapObject != null)
+        {
+            Destroy(node.trapObject);
+            node.trapObject = null;
+        }
 
         if (node.turretObject != null)
         {
@@ -183,7 +209,6 @@ public class GridManager : MonoBehaviour
         node.isBlocked = false;
     }
 
-    // Draws the grid in the Scene view for debugging
     private void OnDrawGizmos()
     {
         Gizmos.color = Color.white;
