@@ -218,6 +218,34 @@ public class GridManager : MonoBehaviour
         return totalRefundValue;
     }
 
+    public bool TryUpgradeAtCell(int x, int y)
+{
+    GridNode node = GetNode(x, y);
+
+    if (node == null)
+        return false;
+
+    // Prioritise turret upgrade if one exists
+    if (node.turretObject != null)
+    {
+        Upgradeable upgradeable = node.turretObject.GetComponent<Upgradeable>();
+
+        if (upgradeable != null)
+            return upgradeable.TryUpgrade();
+    }
+
+    // Otherwise upgrade trap if one exists
+    if (node.trapObject != null)
+    {
+        Upgradeable upgradeable = node.trapObject.GetComponent<Upgradeable>();
+
+        if (upgradeable != null)
+            return upgradeable.TryUpgrade();
+    }
+
+    return false;
+}
+
     private void OnDrawGizmos()
     {
         Gizmos.color = Color.white;

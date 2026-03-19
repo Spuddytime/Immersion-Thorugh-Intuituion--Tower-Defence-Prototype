@@ -1,6 +1,6 @@
 using UnityEngine;
 
-// Handles player input for placing buildable objects using the mouse
+// Handles player input for placing, removing, and upgrading buildable objects using the mouse
 public class MouseBuilder : MonoBehaviour
 {
     public Camera mainCamera;
@@ -33,6 +33,11 @@ public class MouseBuilder : MonoBehaviour
         if (Input.GetMouseButtonDown(1))
         {
             TryRemove();
+        }
+
+        if (Input.GetKeyDown(KeyCode.U))
+        {
+            TryUpgrade();
         }
     }
 
@@ -216,6 +221,54 @@ public class MouseBuilder : MonoBehaviour
         return GridManager.Instance.PlaceTrap(x, y, prefab, cost);
     }
 
+    void TryRemove()
+    {
+        if (mainCamera == null || GridManager.Instance == null)
+            return;
+
+        Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
+
+        if (Physics.Raycast(ray, out RaycastHit hit, 100f, groundLayer))
+        {
+            if (GridManager.Instance.GetXY(hit.point, out int x, out int y))
+            {
+                int refund = GridManager.Instance.ClearCell(x, y);
+
+                if (refund > 0 && EconomyManager.Instance != null)
+                {
+                    EconomyManager.Instance.AddMoney(refund);
+                    Debug.Log("Refunded: " + refund);
+                }
+
+                if (pathTester != null)
+                {
+                    pathTester.TestPath();
+                }
+            }
+        }
+    }
+
+    void TryUpgrade()
+    {
+        if (mainCamera == null || GridManager.Instance == null)
+            return;
+
+        Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
+
+        if (Physics.Raycast(ray, out RaycastHit hit, 100f, groundLayer))
+        {
+            if (GridManager.Instance.GetXY(hit.point, out int x, out int y))
+            {
+                bool upgraded = GridManager.Instance.TryUpgradeAtCell(x, y);
+
+                if (upgraded)
+                {
+                    Debug.Log("Upgraded build at cell: " + x + ", " + y);
+                }
+            }
+        }
+    }
+
     bool IsSpecialCell(int x, int y)
     {
         if (startMarker != null && GridManager.Instance.GetXY(startMarker.position, out int startX, out int startY))
@@ -251,32 +304,5 @@ public class MouseBuilder : MonoBehaviour
         GridManager.Instance.SetCellBlocked(x, y, false);
 
         return testPath == null;
-    }
-
-    void TryRemove()
-    {
-        if (mainCamera == null || GridManager.Instance == null)
-            return;
-
-        Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
-
-        if (Physics.Raycast(ray, out RaycastHit hit, 100f, groundLayer))
-        {
-            if (GridManager.Instance.GetXY(hit.point, out int x, out int y))
-            {
-                int refund = GridManager.Instance.ClearCell(x, y);
-
-                if (refund > 0 && EconomyManager.Instance != null)
-                {
-                    EconomyManager.Instance.AddMoney(refund);
-                    Debug.Log("Refunded: " + refund);
-                }
-
-                if (pathTester != null)
-                {
-                    pathTester.TestPath();
-                }
-            }
-        }
     }
 }
