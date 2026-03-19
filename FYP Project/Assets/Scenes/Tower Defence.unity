@@ -258,22 +258,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mainCamera: {fileID: 1345959568}
   buildOptions:
-  - name: Turret
-    prefab: {fileID: 1494448485}
-    type: 1
-    cost: 20
-  - name: Anti Air
-    prefab: {fileID: 1084722971}
-    type: 1
-    cost: 25
-  - name: Spike Trap
-    prefab: {fileID: 1279974800}
-    type: 2
-    cost: 15
   - name: Wall
     prefab: {fileID: 1428166148}
     type: 0
     cost: 5
+  - name: Turret
+    prefab: {fileID: 1494448485}
+    type: 1
+    cost: 20
+  - name: Spike Trap
+    prefab: {fileID: 1279974800}
+    type: 2
+    cost: 15
+  - name: Anti Air
+    prefab: {fileID: 1084722971}
+    type: 1
+    cost: 25
   cellHighlight: {fileID: 1601064686}
   groundLayer:
     serializedVersion: 2
@@ -991,6 +991,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: ef2af47916c73d0409ba7ed36a8fa19f, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1084722973}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: ef2af47916c73d0409ba7ed36a8fa19f, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1084722976}
   m_SourcePrefab: {fileID: 100100000, guid: ef2af47916c73d0409ba7ed36a8fa19f, type: 3}
 --- !u!1 &762104487
 GameObject:
@@ -1192,6 +1195,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 7ce801f80ffdf5e4db6827a0d78e70a2, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1494448487}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 7ce801f80ffdf5e4db6827a0d78e70a2, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1494448488}
   m_SourcePrefab: {fileID: 100100000, guid: 7ce801f80ffdf5e4db6827a0d78e70a2, type: 3}
 --- !u!1 &1064276619
 GameObject:
@@ -1495,6 +1501,23 @@ MonoBehaviour:
   rotatingHead: {fileID: 0}
   turnSpeed: 8
   modelRotationOffset: {x: 0, y: 180, z: 0}
+--- !u!114 &1084722976
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1084722971}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7f762bacf8ccc194b807c25afa4d22bb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  currentLevel: 1
+  maxLevel: 3
+  upgradeCosts: 1900000028000000
+  turret: {fileID: 1084722973}
+  spikeTrap: {fileID: 0}
 --- !u!1 &1279974800
 GameObject:
   m_ObjectHideFlags: 0
@@ -1508,6 +1531,7 @@ GameObject:
   - component: {fileID: 1279974803}
   - component: {fileID: 1279974802}
   - component: {fileID: 1279974801}
+  - component: {fileID: 1279974806}
   m_Layer: 0
   m_Name: SpikeTrap
   m_TagString: Untagged
@@ -1615,6 +1639,23 @@ Transform:
   m_Children: []
   m_Father: {fileID: 369257850}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1279974806
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1279974800}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7f762bacf8ccc194b807c25afa4d22bb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  currentLevel: 1
+  maxLevel: 3
+  upgradeCosts: 050000000f000000
+  turret: {fileID: 0}
+  spikeTrap: {fileID: 1279974801}
 --- !u!1001 &1283096619
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2002,6 +2043,23 @@ MonoBehaviour:
   rotatingHead: {fileID: 0}
   turnSpeed: 8
   modelRotationOffset: {x: 0, y: 180, z: 0}
+--- !u!114 &1494448488
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1494448485}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7f762bacf8ccc194b807c25afa4d22bb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  currentLevel: 1
+  maxLevel: 3
+  upgradeCosts: 0f00000019000000
+  turret: {fileID: 1494448487}
+  spikeTrap: {fileID: 0}
 --- !u!1 &1571191897
 GameObject:
   m_ObjectHideFlags: 0
@@ -2285,7 +2343,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 99229d545c18aa84599d75a609bbdff5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  startingMoney: 50
+  startingMoney: 999
 --- !u!1 &1748207791
 GameObject:
   m_ObjectHideFlags: 0
