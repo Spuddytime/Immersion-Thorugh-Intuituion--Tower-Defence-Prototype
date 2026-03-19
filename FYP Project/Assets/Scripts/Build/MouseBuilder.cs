@@ -4,9 +4,7 @@ using UnityEngine;
 public class MouseBuilder : MonoBehaviour
 {
     public Camera mainCamera;
-    public GameObject wallPrefab;
-    public GameObject turretPrefab;
-    public GameObject trapPrefab;
+    public BuildableOption[] buildOptions;
     public Transform cellHighlight;
     public LayerMask groundLayer;
 
