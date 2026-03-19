@@ -1,4 +1,4 @@
-# Immersion Thorugh Intuituion: Tower Defence Prototype
+# Immersion Through Intuituion: Tower Defence Prototype
  FYP Project
 
-Through 3 different Repo's I have faith that this is the oen 
+Through 3 different Repo's I have faith that this is the one that will work 
