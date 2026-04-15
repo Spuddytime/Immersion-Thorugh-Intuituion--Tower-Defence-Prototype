@@ -16,6 +16,9 @@ public class Turret : MonoBehaviour
     [Tooltip("Used if the turret model faces the wrong direction")]
     public Vector3 modelRotationOffset = new Vector3(0f, 180f, 0f);
 
+    [Header("VFX")]
+    public TurretVFX turretVFX;
+
     private float fireCooldown = 0f;
     private EnemyHealth currentTarget;
 
@@ -115,6 +118,19 @@ public class Turret : MonoBehaviour
             return;
 
         currentTarget.TakeDamage(damage);
+
+        if (turretVFX != null)
+        {
+            Vector3 aimPoint = currentTarget.transform.position + Vector3.up * 0.5f;
+
+            Collider targetCollider = currentTarget.GetComponent<Collider>();
+            if (targetCollider != null)
+            {
+                aimPoint = targetCollider.bounds.center;
+            }
+
+            turretVFX.FireTracer(aimPoint);
+        }
     }
 
     private void OnDrawGizmosSelected()
