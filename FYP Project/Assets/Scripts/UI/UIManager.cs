@@ -1,17 +1,25 @@
 using TMPro;
 using UnityEngine;
 
-// Handles updating on-screen UI elements
+// Handles updating on-screen UI elements for both desktop and VR
 public class UIManager : MonoBehaviour
 {
     public static UIManager Instance;
 
+    [Header("Desktop UI")]
     public TextMeshProUGUI baseHealthText;
     public TextMeshProUGUI waveText;
     public TextMeshProUGUI moneyText;
     public TextMeshProUGUI buildModeText;
     public TextMeshProUGUI buildHintText;
     public GameObject gameOverText;
+
+    [Header("VR UI")]
+    public TextMeshProUGUI vrBaseHealthText;
+    public TextMeshProUGUI vrWaveText;
+    public TextMeshProUGUI vrMoneyText;
+    public TextMeshProUGUI vrBuildModeText;
+    public GameObject vrGameOverText;
 
     private void Awake()
     {
@@ -20,6 +28,11 @@ public class UIManager : MonoBehaviour
         if (gameOverText != null)
         {
             gameOverText.SetActive(false);
+        }
+
+        if (vrGameOverText != null)
+        {
+            vrGameOverText.SetActive(false);
         }
 
         if (buildHintText != null)
@@ -34,6 +47,11 @@ public class UIManager : MonoBehaviour
         {
             baseHealthText.text = "Base HP: " + currentHealth;
         }
+
+        if (vrBaseHealthText != null)
+        {
+            vrBaseHealthText.text = "Base HP: " + currentHealth;
+        }
     }
 
     public void UpdateWave(int currentWave)
@@ -41,6 +59,11 @@ public class UIManager : MonoBehaviour
         if (waveText != null)
         {
             waveText.text = "Wave: " + currentWave;
+        }
+
+        if (vrWaveText != null)
+        {
+            vrWaveText.text = "Wave: " + currentWave;
         }
     }
 
@@ -50,6 +73,11 @@ public class UIManager : MonoBehaviour
         {
             moneyText.text = "Money: " + currentMoney;
         }
+
+        if (vrMoneyText != null)
+        {
+            vrMoneyText.text = "Money: " + currentMoney;
+        }
     }
 
     public void UpdateBuildMode(string modeName)
@@ -58,6 +86,11 @@ public class UIManager : MonoBehaviour
         {
             buildModeText.text = "Build Mode: " + modeName;
         }
+
+        if (vrBuildModeText != null)
+        {
+            vrBuildModeText.text = "Mode: " + modeName;
+        }
     }
 
     public void ShowGameOver()
@@ -65,6 +98,11 @@ public class UIManager : MonoBehaviour
         if (gameOverText != null)
         {
             gameOverText.SetActive(true);
+        }
+
+        if (vrGameOverText != null)
+        {
+            vrGameOverText.SetActive(true);
         }
     }
 }

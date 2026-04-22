@@ -15,16 +15,29 @@ public class WaveSpawner : MonoBehaviour
     [Header("Enemy Types")]
     public List<EnemySpawnOption> enemyOptions = new List<EnemySpawnOption>();
 
-    private bool isSpawning = false;
+    [SerializeField] private bool isSpawning = false;
     private int currentWave = 0;
+
+    public bool IsSpawning => isSpawning;
+    public int CurrentWave => currentWave;
 
     void Update()
     {
-        // Press E to start the next wave
-        if (Input.GetKeyDown(KeyCode.E) && !isSpawning)
+        if (Input.GetKeyDown(KeyCode.E))
         {
-            StartCoroutine(SpawnWave());
+            StartNextWave();
         }
+    }
+
+    public void StartNextWave()
+    {
+        if (isSpawning)
+        {
+            Debug.Log("Wave already spawning.");
+            return;
+        }
+
+        StartCoroutine(SpawnWave());
     }
 
     IEnumerator SpawnWave()
@@ -50,7 +63,12 @@ public class WaveSpawner : MonoBehaviour
 
             if (enemyToSpawn != null)
             {
+                Debug.Log("Spawning enemy: " + enemyToSpawn.name + " on wave " + currentWave);
                 enemySpawner.SpawnEnemy(enemyToSpawn);
+            }
+            else
+            {
+                Debug.LogWarning("No valid enemy found for wave " + currentWave);
             }
 
             yield return new WaitForSeconds(timeBetweenSpawns);
@@ -66,7 +84,7 @@ public class WaveSpawner : MonoBehaviour
 
         foreach (EnemySpawnOption option in enemyOptions)
         {
-            if (option.enemyPrefab != null && currentWave >= option.unlockWave)
+            if (option.enemyPrefab != null && currentWave >= option.unlockWave && option.spawnWeight > 0)
             {
                 validOptions.Add(option);
             }
