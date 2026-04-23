@@ -33,6 +33,10 @@ public class VRBuilder : MonoBehaviour
     public float popDuration = 0.15f;
     public float popStartScaleMultiplier = 0.2f;
 
+    [Header("Upgrade Feedback")]
+    public float upgradePulseMultiplier = 1.15f;
+    public float upgradePulseDuration = 0.12f;
+
     [Header("Haptics")]
     public bool useHaptics = true;
     public float placeHapticStrength = 0.4f;
@@ -41,6 +45,12 @@ public class VRBuilder : MonoBehaviour
     public float removeHapticDuration = 0.06f;
     public float upgradeHapticStrength = 0.5f;
     public float upgradeHapticDuration = 0.1f;
+    public float cycleHapticStrength = 0.2f;
+    public float cycleHapticDuration = 0.04f;
+
+    [Header("Hover Haptics")]
+    public float hoverUpgradeHapticStrength = 0.2f;
+    public float hoverUpgradeHapticDuration = 0.03f;
 
     private int currentBuildIndex = 0;
 
@@ -50,6 +60,8 @@ public class VRBuilder : MonoBehaviour
     private bool lastGripState = false;
     private bool lastPrimaryState = false;
     private bool lastSecondaryState = false;
+
+    private Upgradeable lastHoveredUpgradeable;
 
     void Start()
     {
@@ -105,7 +117,7 @@ public class VRBuilder : MonoBehaviour
             lastGripState = gripPressed;
         }
 
-        // Primary button (A on Quest right controller) = Cycle build mode
+        // A = Cycle build mode
         if (rightHand.TryGetFeatureValue(CommonUsages.primaryButton, out bool primaryPressed))
         {
             if (primaryPressed && !lastPrimaryState)
@@ -115,7 +127,7 @@ public class VRBuilder : MonoBehaviour
             lastPrimaryState = primaryPressed;
         }
 
-        // Secondary button (B on Quest right controller) = Upgrade
+        // B = Upgrade
         if (rightHand.TryGetFeatureValue(CommonUsages.secondaryButton, out bool secondaryPressed))
         {
             if (secondaryPressed && !lastSecondaryState)
@@ -138,6 +150,7 @@ public class VRBuilder : MonoBehaviour
 
         Debug.Log("VR Build Mode: " + buildOptions[currentBuildIndex].name);
         UpdateBuildModeUI();
+        SendHaptics(cycleHapticStrength, cycleHapticDuration);
     }
 
     void UpdateBuildModeUI()
@@ -146,6 +159,7 @@ public class VRBuilder : MonoBehaviour
             return;
 
         UIManager.Instance.UpdateBuildMode(buildOptions[currentBuildIndex].name);
+        UIManager.Instance.UpdateBuildCost(buildOptions[currentBuildIndex].cost);
     }
 
     void UpdateRayVisuals()
@@ -157,6 +171,8 @@ public class VRBuilder : MonoBehaviour
 
         Vector3 startPos = rayOrigin.position + rayOrigin.forward * 0.05f;
         Vector3 rayEnd = rayOrigin.position + rayOrigin.forward * rayDistance;
+
+        bool foundValidGridCell = false;
 
         if (Physics.Raycast(ray, out RaycastHit hit, rayDistance, groundLayer))
         {
@@ -172,6 +188,8 @@ public class VRBuilder : MonoBehaviour
             {
                 if (GridManager.Instance.GetXY(hit.point, out int x, out int y))
                 {
+                    foundValidGridCell = true;
+
                     Vector3 cellWorldPos = GridManager.Instance.GetWorldPosition(x, y);
                     cellHighlight.position = cellWorldPos + new Vector3(0f, 0.05f, 0f);
                     cellHighlight.gameObject.SetActive(true);
@@ -194,6 +212,9 @@ public class VRBuilder : MonoBehaviour
                             }
                         }
                     }
+
+                    UpdateUpgradeCostUI(x, y);
+                    CheckUpgradeableHoverHaptics(x, y);
                 }
                 else
                 {
@@ -210,11 +231,83 @@ public class VRBuilder : MonoBehaviour
                 cellHighlight.gameObject.SetActive(false);
         }
 
+        if (!foundValidGridCell)
+        {
+            lastHoveredUpgradeable = null;
+
+            if (UIManager.Instance != null)
+            {
+                UIManager.Instance.UpdateUpgradeCost(-1);
+            }
+        }
+
         if (laserLine != null)
         {
             laserLine.positionCount = 2;
             laserLine.SetPosition(0, startPos);
             laserLine.SetPosition(1, rayEnd);
+        }
+    }
+
+    void UpdateUpgradeCostUI(int x, int y)
+    {
+        if (UIManager.Instance == null || GridManager.Instance == null)
+            return;
+
+        GridNode node = GridManager.Instance.GetNode(x, y);
+        if (node == null)
+        {
+            UIManager.Instance.UpdateUpgradeCost(-1);
+            return;
+        }
+
+        Upgradeable upgradeable = null;
+
+        if (node.turretObject != null)
+            upgradeable = node.turretObject.GetComponent<Upgradeable>();
+        else if (node.trapObject != null)
+            upgradeable = node.trapObject.GetComponent<Upgradeable>();
+
+        if (upgradeable != null && upgradeable.CanUpgrade())
+        {
+            UIManager.Instance.UpdateUpgradeCost(upgradeable.GetUpgradeCost());
+        }
+        else
+        {
+            UIManager.Instance.UpdateUpgradeCost(-1);
+        }
+    }
+
+    void CheckUpgradeableHoverHaptics(int x, int y)
+    {
+        if (GridManager.Instance == null)
+            return;
+
+        GridNode node = GridManager.Instance.GetNode(x, y);
+        if (node == null)
+        {
+            lastHoveredUpgradeable = null;
+            return;
+        }
+
+        Upgradeable currentUpgradeable = null;
+
+        if (node.turretObject != null)
+            currentUpgradeable = node.turretObject.GetComponent<Upgradeable>();
+        else if (node.trapObject != null)
+            currentUpgradeable = node.trapObject.GetComponent<Upgradeable>();
+
+        if (currentUpgradeable != null && currentUpgradeable.CanUpgrade())
+        {
+            if (currentUpgradeable != lastHoveredUpgradeable)
+            {
+                SendHaptics(hoverUpgradeHapticStrength, hoverUpgradeHapticDuration);
+                lastHoveredUpgradeable = currentUpgradeable;
+            }
+        }
+        else
+        {
+            lastHoveredUpgradeable = null;
         }
     }
 
@@ -458,6 +551,37 @@ public class VRBuilder : MonoBehaviour
         placedTransform.localScale = finalScale;
     }
 
+    IEnumerator PlayUpgradePulse(Transform target)
+    {
+        if (target == null)
+            yield break;
+
+        Vector3 originalScale = target.localScale;
+        Vector3 biggerScale = originalScale * upgradePulseMultiplier;
+
+        float timer = 0f;
+
+        while (timer < upgradePulseDuration)
+        {
+            timer += Time.deltaTime;
+            float t = timer / upgradePulseDuration;
+            target.localScale = Vector3.Lerp(originalScale, biggerScale, t);
+            yield return null;
+        }
+
+        timer = 0f;
+
+        while (timer < upgradePulseDuration)
+        {
+            timer += Time.deltaTime;
+            float t = timer / upgradePulseDuration;
+            target.localScale = Vector3.Lerp(biggerScale, originalScale, t);
+            yield return null;
+        }
+
+        target.localScale = originalScale;
+    }
+
     void TryRemove()
     {
         if (rayOrigin == null || GridManager.Instance == null)
@@ -503,7 +627,22 @@ public class VRBuilder : MonoBehaviour
                 {
                     Debug.Log("Upgraded build at cell: " + x + ", " + y);
                     SendHaptics(upgradeHapticStrength, upgradeHapticDuration);
+
+                    GridNode node = GridManager.Instance.GetNode(x, y);
+                    if (node != null)
+                    {
+                        if (node.turretObject != null)
+                        {
+                            StartCoroutine(PlayUpgradePulse(node.turretObject.transform));
+                        }
+                        else if (node.trapObject != null)
+                        {
+                            StartCoroutine(PlayUpgradePulse(node.trapObject.transform));
+                        }
+                    }
                 }
+
+                UpdateUpgradeCostUI(x, y);
             }
         }
     }

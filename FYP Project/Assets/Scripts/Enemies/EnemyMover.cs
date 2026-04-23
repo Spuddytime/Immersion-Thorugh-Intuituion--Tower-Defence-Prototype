@@ -35,9 +35,12 @@ public class EnemyMover : MonoBehaviour
     private Vector3 visualBaseLocalPosition;
 
     private float speedMultiplier = 1f;
+    private bool isSlowed = false;
 
     private Renderer[] renderers;
     private Color[] originalColors;
+
+    public bool IsSlowed => isSlowed;
 
     private void OnEnable()
     {
@@ -64,7 +67,6 @@ public class EnemyMover : MonoBehaviour
 
         for (int i = 0; i < renderers.Length; i++)
         {
-            // Make sure each enemy gets its own material instance
             renderers[i].material = new Material(renderers[i].material);
 
             if (renderers[i].material.HasProperty("_Color"))
@@ -97,7 +99,6 @@ public class EnemyMover : MonoBehaviour
         Vector3 moveDirection = targetPosition - transform.position;
         moveDirection.y = 0f;
 
-        // Rotate root toward movement direction
         if (moveDirection.sqrMagnitude > 0.001f)
         {
             Quaternion targetRotation = Quaternion.LookRotation(moveDirection.normalized);
@@ -108,7 +109,6 @@ public class EnemyMover : MonoBehaviour
             );
         }
 
-        // Keep visual model in the correct local orientation
         if (visualRoot != null)
         {
             visualRoot.localRotation = Quaternion.Euler(visualRotationOffset);
@@ -154,16 +154,20 @@ public class EnemyMover : MonoBehaviour
         return node.worldPosition + Vector3.up * heightOffset;
     }
 
-    public void ApplySlow(float multiplier, float duration)
+    public bool ApplySlow(float multiplier, float duration)
     {
+        if (isSlowed)
+            return false;
+
         StartCoroutine(SlowRoutine(multiplier, duration));
+        return true;
     }
 
     IEnumerator SlowRoutine(float multiplier, float duration)
     {
+        isSlowed = true;
         speedMultiplier *= multiplier;
 
-        // Apply slowed tint
         for (int i = 0; i < renderers.Length; i++)
         {
             if (renderers[i].material.HasProperty("_Color"))
@@ -175,8 +179,8 @@ public class EnemyMover : MonoBehaviour
         yield return new WaitForSeconds(duration);
 
         speedMultiplier /= multiplier;
+        isSlowed = false;
 
-        // Restore original colors
         for (int i = 0; i < renderers.Length; i++)
         {
             if (renderers[i].material.HasProperty("_Color"))

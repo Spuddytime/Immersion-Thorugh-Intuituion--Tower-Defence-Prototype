@@ -1,7 +1,7 @@
 using System.Collections;
 using UnityEngine;
 
-// Persistent trap with cooldown + smooth visual feedback
+// Persistent trap that slows one enemy, then goes on cooldown
 public class SlowTrap : MonoBehaviour
 {
     [Header("Slow Effect")]
@@ -37,26 +37,32 @@ public class SlowTrap : MonoBehaviour
 
         EnemyMover enemy = other.GetComponent<EnemyMover>();
 
-        if (enemy != null)
-        {
-            enemy.ApplySlow(slowMultiplier, slowDuration);
-            StartCoroutine(CooldownRoutine());
-        }
+        if (enemy == null)
+            return;
+
+        // If enemy is already slowed, do nothing and do NOT consume trap
+        if (enemy.IsSlowed)
+            return;
+
+        bool applied = enemy.ApplySlow(slowMultiplier, slowDuration);
+
+        if (!applied)
+            return;
+
+        trapReady = false;
+        UpdateVisualInstant(false);
+        StartCoroutine(CooldownRoutine());
     }
 
     IEnumerator CooldownRoutine()
     {
-        trapReady = false;
-
         float timer = 0f;
 
         while (timer < cooldownDuration)
         {
             timer += Time.deltaTime;
             float t = timer / cooldownDuration;
-
             UpdateVisualLerp(t);
-
             yield return null;
         }
 
@@ -70,7 +76,6 @@ public class SlowTrap : MonoBehaviour
             return;
 
         Color color = ready ? readyColor : cooldownColor;
-
         trapMaterial.color = color;
         trapMaterial.SetColor("_EmissionColor", color * emissionIntensity);
     }
@@ -80,9 +85,7 @@ public class SlowTrap : MonoBehaviour
         if (trapMaterial == null)
             return;
 
-        // cooldown → ready (red → cyan)
         Color color = Color.Lerp(cooldownColor, readyColor, t);
-
         trapMaterial.color = color;
         trapMaterial.SetColor("_EmissionColor", color * emissionIntensity);
     }
